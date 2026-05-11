@@ -562,14 +562,12 @@
 
   <nav class="sidebar-nav">
     <div class="nav-section-label">เมนูหลัก</div>
-    <div class="nav-item active" onclick="showPage('dashboard', this)">
-      <span class="nav-icon">🏠</span><span class="nav-label">หน้าหลัก</span>
-    </div>
-    <div class="nav-item" onclick="showPage('subsystems', this)">
+    <div class="nav-item active" onclick="showPage('subsystems', this)">
       <span class="nav-icon">🔗</span><span class="nav-label">ระบบงาน</span>
     </div>
-
-    <div class="nav-section-label" style="margin-top:8px;">ข้อมูล</div>
+    <div class="nav-item" onclick="showPage('personnel', this)">
+      <span class="nav-icon">👥</span><span class="nav-label">ข้อมูลบุคลากร</span>
+    </div>
     <div class="nav-item" onclick="showPage('announce', this)">
       <span class="nav-icon">📢</span><span class="nav-label">ประกาศ / ข่าวสาร</span>
     </div>
@@ -588,12 +586,24 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="admin-badge">
-      <div class="admin-avatar" id="sidebarAvatarLetter">?</div>
-      <div class="admin-info">
-        <p id="sidebarAdminName">ผู้เยี่ยมชม</p>
-        <small id="sidebarAdminRole">ไม่ได้เข้าสู่ระบบ</small>
+    <!-- Admin login button (before login) -->
+    <div id="sidebarAdminLoginBtn" onclick="openLoginModal()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;transition:background 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.16)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
+      <div style="width:30px;height:30px;flex-shrink:0;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;">🔐</div>
+      <div style="overflow:hidden;">
+        <p style="font-size:0.78rem;color:#fff;font-weight:600;">สำหรับ Admin</p>
+        <small style="font-size:0.65rem;color:rgba(255,255,255,0.5);">คลิกเพื่อเข้าสู่ระบบ</small>
       </div>
+    </div>
+    <!-- Admin info (after login) -->
+    <div id="sidebarAdminInfo" style="display:none;">
+      <div class="admin-badge">
+        <div class="admin-avatar" id="sidebarAvatarLetter">A</div>
+        <div class="admin-info">
+          <p id="sidebarAdminName">ผู้ดูแลระบบ</p>
+          <small id="sidebarAdminRole">Admin</small>
+        </div>
+      </div>
+      <button onclick="adminLogout()" style="margin-top:8px;width:100%;background:rgba(220,38,38,0.15);color:#fca5a5;border:none;cursor:pointer;padding:7px 12px;border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.78rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.2s;" onmouseover="this.style.background='rgba(220,38,38,0.25)'" onmouseout="this.style.background='rgba(220,38,38,0.15)'">🚪 ออกจากระบบ</button>
     </div>
   </div>
 </aside>
@@ -605,10 +615,10 @@
 <div id="main">
   <!-- TOPBAR -->
   <div id="topbar">
-    <span class="topbar-title" id="topbarTitle">หน้าหลัก</span>
+    <span class="topbar-title" id="topbarTitle">ระบบงาน</span>
     <div class="topbar-actions">
       <span id="sessionTimer">⏱ <span id="sessionTimerText"></span></span>
-      <button class="btn-admin-login" id="btnAdminLogin" onclick="openLoginModal()">🔐 เข้าสู่ระบบ Admin</button>
+      <button class="btn-admin-login" id="btnAdminLogin" onclick="openLoginModal()" style="display:none;">🔐 เข้าสู่ระบบ Admin</button>
       <button class="btn-admin-logout" id="btnAdminLogout" style="display:none" onclick="adminLogout()">🚪 ออกจากระบบ</button>
     </div>
   </div>
@@ -616,18 +626,8 @@
   <!-- CONTENT -->
   <div id="content">
 
-    <!-- ===== PAGE: DASHBOARD ===== -->
-    <div class="page active" id="page-dashboard">
-      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div>
-          <h2>📊 ภาพรวมกลุ่มบริหารงานบุคคล</h2>
-          <p>ข้อมูล ณ วันที่ <span id="todayDate"></span></p>
-        </div>
-        <!-- แก้ไขข้อมูลบุคลากรได้ที่ Google Sheets → Sheet: Dashboard -->
-      </div>
-
-      <!-- STAFF STAT CARDS -->
-      <div class="stat-grid" id="staffStatGrid"></div>
+    <!-- ===== PAGE: DASHBOARD (hidden, kept for data rendering) ===== -->
+    <div class="page" id="page-dashboard">
       <div class="grid-2">
         <div class="card">
           <div class="card-header"><span>📢</span><h3>ประกาศล่าสุด</h3></div>
@@ -640,8 +640,20 @@
       </div>
     </div>
 
+    <!-- ===== PAGE: PERSONNEL ===== -->
+    <div class="page" id="page-personnel">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>👥 ข้อมูลบุคลากร</h2>
+          <p>ข้อมูล ณ วันที่ <span id="todayDate"></span></p>
+        </div>
+        <button class="admin-controls admin-add-btn" onclick="document.getElementById('staffModal').classList.add('open')">✏️ แก้ไขจำนวน</button>
+      </div>
+      <div class="stat-grid" id="staffStatGrid"></div>
+    </div>
+
     <!-- ===== PAGE: SUBSYSTEMS ===== -->
-    <div class="page" id="page-subsystems">
+    <div class="page active" id="page-subsystems">
       <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
         <div>
           <h2>🔗 ระบบงานในกลุ่มบริหารงานบุคคล</h2>
@@ -1177,7 +1189,7 @@ function toggleSidebar() {
 // ปิด sidebar ด้วย Escape key
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebarOpen) closeSidebar(); });
 
-const pageTitles = { dashboard: 'หน้าหลัก', subsystems: 'ระบบงาน', announce: 'ประกาศ / ข่าวสาร', calendar: 'ปฏิทินกิจกรรม', contacts: 'ข้อมูลติดต่อ', security: 'จัดการรหัสผ่าน' };
+const pageTitles = { dashboard: 'หน้าหลัก', subsystems: 'ระบบงาน', personnel: 'ข้อมูลบุคลากร', announce: 'ประกาศ / ข่าวสาร', calendar: 'ปฏิทินกิจกรรม', contacts: 'ข้อมูลติดต่อ', security: 'จัดการรหัสผ่าน' };
 
 function showPage(id, el) {
   if (id === 'security' && !document.body.classList.contains('admin-mode')) return;
@@ -1282,7 +1294,10 @@ function startLockCountdown() {
 function activateAdminMode() {
   document.body.classList.add('admin-mode');
   document.getElementById('btnAdminLogin').style.display  = 'none';
-  document.getElementById('btnAdminLogout').style.display = 'flex';
+  document.getElementById('btnAdminLogout').style.display = 'none';
+  // สลับ sidebar footer
+  document.getElementById('sidebarAdminLoginBtn').style.display = 'none';
+  document.getElementById('sidebarAdminInfo').style.display = 'block';
   document.getElementById('sidebarAdminName').textContent = 'ผู้ดูแลระบบ';
   document.getElementById('sidebarAdminRole').textContent = 'Admin Mode';
   document.getElementById('sidebarAvatarLetter').textContent = 'A';
@@ -1331,18 +1346,18 @@ function tickSession() {
 function adminLogout() {
   clearInterval(sessionInterval);
   document.body.classList.remove('admin-mode');
-  document.getElementById('btnAdminLogin').style.display  = 'flex';
+  document.getElementById('btnAdminLogin').style.display  = 'none';
   document.getElementById('btnAdminLogout').style.display = 'none';
-  document.getElementById('sidebarAdminName').textContent = 'ผู้เยี่ยมชม';
-  document.getElementById('sidebarAdminRole').textContent = 'ไม่ได้เข้าสู่ระบบ';
-  document.getElementById('sidebarAvatarLetter').textContent = '?';
+  // สลับ sidebar footer กลับ
+  document.getElementById('sidebarAdminLoginBtn').style.display = 'flex';
+  document.getElementById('sidebarAdminInfo').style.display = 'none';
   document.getElementById('sessionTimer').style.display = 'none';
   document.getElementById('adminBarTimer').textContent = '';
   document.querySelectorAll('.nav-item.admin-controls, .nav-section-label.admin-controls').forEach(el => {
     el.style.display = 'none';
   });
-  // กลับหน้า dashboard
-  showPage('dashboard', document.querySelector('.nav-item'));
+  // กลับหน้า subsystems
+  showPage('subsystems', document.querySelector('.nav-item'));
   document.querySelector('.nav-item').classList.add('active');
 }
 
