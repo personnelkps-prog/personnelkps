@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กลุ่มบริหารงานบุคคล — รร.คำสร้อยพิทยาสรรค์</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary:    #1a56a0;
+      --primary-dk: #0f3d7a;
+      --primary-lt: #e8f0fb;
+      --accent:     #f59e0b;
+      --accent-lt:  #fef3c7;
+      --success:    #16a34a;
+      --danger:     #dc2626;
+      --muted:      #64748b;
+      --bg:         #f1f5f9;
+      --sidebar-w:  260px;
+      --sidebar-w-collapsed: 64px;
+      --header-h:   60px;
+      --card-r:     14px;
+      --shadow:     0 2px 12px rgba(0,0,0,0.08);
+      --shadow-md:  0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: #1e293b;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ========== SIDEBAR ========== */
+    #sidebar {
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: linear-gradient(180deg, var(--primary-dk) 0%, var(--primary) 100%);
+      display: flex; flex-direction: column;
+      transition: transform 0.3s ease;
+      z-index: 300;
+      overflow: hidden;
+      transform: translateX(0);
+    }
+    /* ซ่อน sidebar โดยเลื่อนออกซ้าย */
+    #sidebar.hidden { transform: translateX(-100%); }
+
+    /* Overlay มืดเมื่อ sidebar เปิด */
+    #sidebarOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 299;
+      opacity: 0;
+      transition: opacity 0.3s;
+      cursor: pointer;
+    }
+    #sidebarOverlay.visible { display: block; opacity: 1; }
+
+    .sidebar-brand {
+      padding: 18px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; gap: 10px;
+      min-height: var(--header-h);
+    }
+    .brand-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .brand-text { overflow: hidden; white-space: nowrap; }
+    .brand-text h2 { font-family: 'Prompt', sans-serif; font-size: 0.82rem; color: #fff; font-weight: 600; line-height: 1.3; }
+    .brand-text p  { font-size: 0.68rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+
+    .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; overflow-x: hidden; }
+    .nav-section-label {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.4); text-transform: uppercase;
+      padding: 10px 10px 4px;
+      white-space: nowrap; overflow: hidden;
+      transition: opacity 0.2s;
+    }
+    #sidebar.collapsed .nav-section-label { opacity: 0; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.75);
+      font-size: 0.88rem; font-weight: 500;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+      margin-bottom: 2px;
+      position: relative;
+    }
+    .nav-item:hover  { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-item.active { background: rgba(255,255,255,0.18); color: #fff; font-weight: 700; }
+    .nav-item.active::before {
+      content: '';
+      position: absolute; left: 0; top: 6px; bottom: 6px;
+      width: 3px; background: var(--accent);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
+    .nav-label { overflow: hidden; }
+
+    .sidebar-footer {
+      padding: 12px 8px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .admin-badge {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .admin-avatar {
+      width: 30px; height: 30px; flex-shrink: 0;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; color: #1e293b;
+    }
+    .admin-info { overflow: hidden; }
+    .admin-info p { font-size: 0.78rem; color: #fff; font-weight: 600; }
+    .admin-info small { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+
+    /* ========== TOGGLE BUTTON ========== */
+    #sidebarToggle {
+      position: fixed; top: 14px; left: 14px;
+      z-index: 400;
+      background: #fff;
+      border: none; cursor: pointer;
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: var(--primary);
+    }
+    /* เมื่อ sidebar เปิด ปุ่มย้ายไปข้างๆ sidebar */
+    body.sidebar-open #sidebarToggle {
+      left: calc(var(--sidebar-w) + 8px);
+      transition: left 0.3s ease;
+    }
+
+    /* ========== MAIN ========== */
+    #main {
+      margin-left: 0;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+
+    /* TOP BAR */
+    #topbar {
+      height: var(--header-h);
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex; align-items: center;
+      padding: 0 24px;
+      gap: 12px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .topbar-title { font-family: 'Prompt', sans-serif; font-size: 1rem; font-weight: 600; color: var(--primary); flex: 1; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-admin-login {
+      background: var(--primary);
+      color: #fff; border: none; cursor: pointer;
+      padding: 6px 14px; border-radius: 8px;
+      font-family: 'Sarabun', sans-serif; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-admin-login:hover { background: var(--primary-dk); }
+    .btn-admin-logout {
+      background: #fee2e2; color: var(--danger);
+      border: none; cursor: pointer;
+      padding: 6px 14px; border-radius: 8px;
+      font-family: 'Sarabun', sans-serif; font-size: 0.82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* SESSION TIMER */
+    #sessionTimer {
+      display: none;
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    #sessionTimer.warning { color: var(--danger); border-color: #fecaca; background: #fff5f5; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    /* ========== CONTENT ========== */
+    #content { flex: 1; padding: 24px; }
+
+    /* ========== PAGES ========== */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ========== CARDS ========== */
+    .card {
+      background: #fff;
+      border-radius: var(--card-r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header h3 { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+    .card-body { padding: 20px; }
+
+    /* STAT CARDS */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .stat-card {
+      background: #fff;
+      border-radius: var(--card-r);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column; gap: 6px;
+      border-left: 4px solid var(--primary);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-card.green  { border-left-color: var(--success); }
+    .stat-card.amber  { border-left-color: var(--accent); }
+    .stat-card.red    { border-left-color: var(--danger); }
+    .stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .stat-icon  { flex-shrink: 0; font-size: 1rem; line-height: 1; }
+    .stat-value { font-family: 'Prompt', sans-serif; font-size: 1.6rem; font-weight: 700; color: #1e293b; line-height: 1; }
+    .stat-sub   { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+    /* STAFF MODAL */
+    .staff-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .staff-row:last-child { border-bottom: none; }
+    .staff-row label { font-size: 0.84rem; color: #475569; font-weight: 600; }
+    .staff-row input { width: 72px; padding: 6px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; font-family: 'Prompt',sans-serif; font-weight: 700; text-align: center; color: #1e293b; outline: none; }
+    .staff-row input:focus { border-color: var(--primary); }
+
+    /* GRID LAYOUT */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+    /* ========== SUBSYSTEM CARDS ========== */
+    .subsystem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .subsystem-card {
+      background: #fff;
+      border-radius: var(--card-r);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 12px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .subsystem-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .subsystem-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .subsystem-card h4 { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+    .subsystem-card p  { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+    .subsystem-footer  { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .btn-open {
+      background: var(--primary); color: #fff;
+      border: none; cursor: pointer;
+      padding: 7px 16px; border-radius: 8px;
+      font-family: 'Sarabun', sans-serif; font-size: 0.8rem; font-weight: 600;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 5px;
+      transition: background 0.2s;
+    }
+    .btn-open:hover { background: var(--primary-dk); }
+    .admin-controls { display: none; gap: 6px; }
+    body.admin-mode .admin-controls { display: flex; }
+    .btn-edit, .btn-del {
+      border: none; cursor: pointer; border-radius: 7px;
+      width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; transition: background 0.2s;
+    }
+    .btn-edit { background: var(--primary-lt); color: var(--primary); }
+    .btn-edit:hover { background: #c7d9f5; }
+    .btn-del  { background: #fee2e2; color: var(--danger); }
+    .btn-del:hover  { background: #fecaca; }
+
+    /* ========== ANNOUNCEMENT ========== */
+    .announce-list { display: flex; flex-direction: column; gap: 12px; }
+    .announce-item {
+      background: #fff;
+      border-radius: var(--card-r);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      display: flex; gap: 14px; align-items: flex-start;
+      transition: transform 0.15s;
+    }
+    .announce-item:hover { transform: translateX(3px); }
+    .announce-dot {
+      width: 10px; height: 10px; flex-shrink: 0;
+      border-radius: 50%; margin-top: 5px;
+    }
+    .announce-dot.urgent { background: var(--danger); }
+    .announce-dot.normal { background: var(--primary); }
+    .announce-dot.info   { background: var(--success); }
+    .announce-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+    .announce-body  { font-size: 0.8rem; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+    .announce-meta  { font-size: 0.72rem; color: #94a3b8; margin-top: 6px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 0.68rem; font-weight: 700;
+    }
+    .tag-urgent { background: #fee2e2; color: var(--danger); }
+    .tag-normal { background: var(--primary-lt); color: var(--primary); }
+    .tag-info   { background: #dcfce7; color: var(--success); }
+
+    /* ========== CALENDAR ========== */
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .cal-header h3 { font-size: 1rem; font-weight: 700; }
+    .cal-nav { display: flex; gap: 6px; }
+    .cal-nav button {
+      background: var(--primary-lt); color: var(--primary);
+      border: none; cursor: pointer; border-radius: 6px;
+      width: 28px; height: 28px; font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day-label { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--muted); padding: 4px 0; }
+    .cal-day {
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-radius: 8px; font-size: 0.78rem; cursor: pointer;
+      position: relative; transition: background 0.15s;
+    }
+    .cal-day:hover { background: var(--primary-lt); }
+    .cal-day.today { background: var(--primary); color: #fff; font-weight: 700; }
+    .cal-day.has-event::after {
+      content: ''; position: absolute; bottom: 3px;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent);
+    }
+    .cal-day.today.has-event::after { background: #fff; }
+    .cal-day.other-month { color: #cbd5e1; }
+
+    .event-list { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .event-item {
+      display: flex; gap: 10px; align-items: center;
+      padding: 8px 12px;
+      background: var(--primary-lt);
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+    .event-date-badge {
+      background: var(--primary); color: #fff;
+      border-radius: 6px; padding: 3px 8px;
+      font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+    }
+
+    /* ========== CONTACTS ========== */
+    .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .contact-card {
+      background: #fff; border-radius: var(--card-r);
+      box-shadow: var(--shadow);
+      padding: 18px; text-align: center;
+      transition: transform 0.2s;
+    }
+    .contact-card:hover { transform: translateY(-2px); }
+    .contact-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%; margin: 0 auto 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 700; color: #fff;
+    }
+    .contact-name  { font-size: 0.88rem; font-weight: 700; color: #1e293b; }
+    .contact-role  { font-size: 0.75rem; color: var(--muted); margin: 3px 0 8px; }
+    .contact-phone {
+      font-size: 0.82rem; color: var(--primary); font-weight: 600;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+
+    /* ========== PAGE HEADER ========== */
+    .page-header { margin-bottom: 20px; }
+    .page-header h2 { font-family: 'Prompt', sans-serif; font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+    .page-header p  { font-size: 0.82rem; color: var(--muted); margin-top: 3px; }
+
+    /* ========== ADMIN ADD BTN ========== */
+    .admin-add-btn {
+      display: none;
+      background: var(--primary); color: #fff;
+      border: none; cursor: pointer;
+      padding: 8px 16px; border-radius: 8px;
+      font-family: 'Sarabun', sans-serif; font-size: 0.82rem; font-weight: 600;
+      align-items: center; gap: 6px;
+    }
+    body.admin-mode .admin-add-btn { display: inline-flex; }
+
+    /* ========== MODAL ========== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 500;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 16px;
+      padding: 28px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-title { font-family: 'Prompt', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 18px; color: #1e293b; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-family: 'Sarabun', sans-serif; font-size: 0.88rem; color: #1e293b;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+    .btn-cancel {
+      background: #f1f5f9; color: #475569;
+      border: none; cursor: pointer; padding: 9px 18px;
+      border-radius: 8px; font-family: 'Sarabun', sans-serif; font-size: 0.85rem; font-weight: 600;
+    }
+    .btn-save {
+      background: var(--primary); color: #fff;
+      border: none; cursor: pointer; padding: 9px 18px;
+      border-radius: 8px; font-family: 'Sarabun', sans-serif; font-size: 0.85rem; font-weight: 600;
+    }
+    .btn-save:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* ========== LOGIN MODAL ========== */
+    .login-icon { text-align: center; font-size: 2.5rem; margin-bottom: 8px; }
+    .login-title { text-align: center; margin-bottom: 20px; }
+    .login-error { color: var(--danger); font-size: 0.8rem; margin-top: 6px; display: none; }
+    .login-locked { 
+      background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px;
+      padding: 10px 14px; color: var(--danger); font-size: 0.82rem;
+      text-align: center; display: none; margin-bottom: 10px;
+    }
+
+    /* strength bar */
+    .strength-bar { height: 4px; border-radius: 4px; margin-top: 6px; transition: all 0.3s; background: #e2e8f0; }
+    .strength-bar.weak   { background: var(--danger); width: 33%; }
+    .strength-bar.medium { background: var(--accent); width: 66%; }
+    .strength-bar.strong { background: var(--success); width: 100%; }
+    .strength-text { font-size: 0.72rem; margin-top: 3px; }
+
+    /* attempts indicator */
+    .attempt-dots { display: flex; gap: 4px; margin-top: 6px; }
+    .attempt-dot { width: 8px; height: 8px; border-radius: 50%; background: #e2e8f0; transition: background 0.2s; }
+    .attempt-dot.used { background: var(--danger); }
+
+    /* ========== ADMIN MODE INDICATOR ========== */
+    .admin-bar {
+      background: linear-gradient(90deg, #1e293b, var(--primary-dk));
+      color: #fff; text-align: center;
+      font-size: 0.75rem; padding: 5px;
+      font-weight: 600; letter-spacing: 0.05em;
+      display: none;
+    }
+    body.admin-mode .admin-bar { display: block; }
+
+    /* ========== CHANGE PASSWORD PAGE ========== */
+    .security-card {
+      background: #fff; border-radius: var(--card-r);
+      box-shadow: var(--shadow); padding: 24px; max-width: 500px;
+    }
+    .hash-output {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 8px; padding: 10px 14px;
+      font-family: monospace; font-size: 0.75rem;
+      word-break: break-all; color: #475569; margin-top: 8px;
+      min-height: 42px;
+    }
+    .copy-btn {
+      background: var(--primary-lt); color: var(--primary);
+      border: none; cursor: pointer; padding: 6px 12px;
+      border-radius: 6px; font-size: 0.78rem; font-weight: 600;
+      margin-top: 6px; display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    /* ========== TOPBAR PADDING for toggle button ========== */
+    #topbar { padding-left: 62px; }
+
+    /* ========== RESPONSIVE ========== */
+    /* Desktop (992px+) */
+    @media (min-width: 992px) {
+      :root { --sidebar-w: 260px; }
+      .container-limit { max-width: 1200px; margin: 0 auto; }
+    }
+
+    /* Tablet (577–991px) */
+    @media (min-width: 577px) and (max-width: 991px) {
+      :root { --sidebar-w: 240px; }
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Mobile (max 576px) */
+    @media (max-width: 576px) {
+      :root { --sidebar-w: 80vw; }
+      #content { padding: 14px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .subsystem-grid { grid-template-columns: 1fr; }
+      .contact-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-header h2 { font-size: 1rem; }
+      .stat-value { font-size: 1.35rem; }
+      #topbar { padding-left: 58px; }
+      .topbar-title { font-size: 0.88rem; }
+      .btn-admin-login, .btn-admin-logout { font-size: 0.75rem; padding: 5px 10px; }
+    }
+
+    /* Very small (max 380px) */
+    @media (max-width: 380px) {
+      :root { --sidebar-w: 90vw; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .contact-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ADMIN MODE BAR -->
+<div class="admin-bar">⚙️ โหมดผู้ดูแลระบบ — คุณสามารถเพิ่ม/แก้ไข/ลบข้อมูลได้ &nbsp;|&nbsp; <span id="adminBarTimer"></span></div>
+
+<!-- SIDEBAR OVERLAY -->
+<div id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="hidden">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🏫</div>
+    <div class="brand-text">
+      <h2>กลุ่มบริหารงานบุคคล</h2>
+      <p>รร.คำสร้อยพิทยาสรรค์</p>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">เมนูหลัก</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+      <span class="nav-icon">🏠</span><span class="nav-label">หน้าหลัก</span>
+    </div>
+    <div class="nav-item" onclick="showPage('subsystems', this)">
+      <span class="nav-icon">🔗</span><span class="nav-label">ระบบงาน</span>
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px;">ข้อมูล</div>
+    <div class="nav-item" onclick="showPage('announce', this)">
+      <span class="nav-icon">📢</span><span class="nav-label">ประกาศ / ข่าวสาร</span>
+    </div>
+    <div class="nav-item" onclick="showPage('calendar', this)">
+      <span class="nav-icon">📅</span><span class="nav-label">ปฏิทินกิจกรรม</span>
+    </div>
+    <div class="nav-item" onclick="showPage('contacts', this)">
+      <span class="nav-icon">📞</span><span class="nav-label">ข้อมูลติดต่อ</span>
+    </div>
+
+    <!-- Admin-only menu -->
+    <div class="nav-section-label admin-controls" style="margin-top:8px;display:none;">ผู้ดูแลระบบ</div>
+    <div class="nav-item admin-controls" style="display:none;" onclick="showPage('security', this)">
+      <span class="nav-icon">🔑</span><span class="nav-label">จัดการรหัสผ่าน</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="admin-badge">
+      <div class="admin-avatar" id="sidebarAvatarLetter">?</div>
+      <div class="admin-info">
+        <p id="sidebarAdminName">ผู้เยี่ยมชม</p>
+        <small id="sidebarAdminRole">ไม่ได้เข้าสู่ระบบ</small>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- TOGGLE -->
+<button id="sidebarToggle" onclick="toggleSidebar()">☰</button>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <span class="topbar-title" id="topbarTitle">หน้าหลัก</span>
+    <div class="topbar-actions">
+      <span id="sessionTimer">⏱ <span id="sessionTimerText"></span></span>
+      <button class="btn-admin-login" id="btnAdminLogin" onclick="openLoginModal()">🔐 เข้าสู่ระบบ Admin</button>
+      <button class="btn-admin-logout" id="btnAdminLogout" style="display:none" onclick="adminLogout()">🚪 ออกจากระบบ</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- ===== PAGE: DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>📊 ภาพรวมกลุ่มบริหารงานบุคคล</h2>
+          <p>ข้อมูล ณ วันที่ <span id="todayDate"></span></p>
+        </div>
+        <!-- แก้ไขข้อมูลบุคลากรได้ที่ Google Sheets → Sheet: Dashboard -->
+      </div>
+
+      <!-- STAFF STAT CARDS -->
+      <div class="stat-grid" id="staffStatGrid"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header"><span>📢</span><h3>ประกาศล่าสุด</h3></div>
+          <div class="card-body" id="dashAnnounce"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span>📅</span><h3>กิจกรรมใกล้มาถึง</h3></div>
+          <div class="card-body" id="dashEvents"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: SUBSYSTEMS ===== -->
+    <div class="page" id="page-subsystems">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>🔗 ระบบงานในกลุ่มบริหารงานบุคคล</h2>
+          <p>คลิกที่การ์ดเพื่อเปิดระบบงาน</p>
+        </div>
+        <button class="admin-add-btn" onclick="openSubsystemModal()">+ เพิ่มระบบงาน</button>
+      </div>
+      <div class="subsystem-grid" id="subsystemGrid"></div>
+    </div>
+
+    <!-- ===== PAGE: ANNOUNCE ===== -->
+    <div class="page" id="page-announce">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>📢 ประกาศ / ข่าวสาร</h2>
+          <p>ข่าวสารและประกาศจากกลุ่มบริหารงานบุคคล</p>
+        </div>
+        <button class="admin-add-btn" onclick="openAnnounceModal()">+ เพิ่มประกาศ</button>
+      </div>
+      <div class="announce-list" id="announceList"></div>
+    </div>
+
+    <!-- ===== PAGE: CALENDAR ===== -->
+    <div class="page" id="page-calendar">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>📅 ปฏิทินกิจกรรม</h2>
+          <p>กิจกรรมและกำหนดการสำคัญ</p>
+        </div>
+        <button class="admin-add-btn" onclick="openEventModal()">+ เพิ่มกิจกรรม</button>
+      </div>
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <div class="card-body">
+            <div class="cal-header">
+              <h3 id="calMonthLabel"></h3>
+              <div class="cal-nav">
+                <button onclick="calMove(-1)">‹</button>
+                <button onclick="calMove(1)">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div class="event-list" id="calEventList"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span>📌</span><h3>กิจกรรมทั้งหมด</h3></div>
+          <div class="card-body">
+            <div class="announce-list" id="allEventList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAGE: CONTACTS ===== -->
+    <div class="page" id="page-contacts">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h2>📞 ข้อมูลติดต่อบุคลากร</h2>
+          <p>รายชื่อและเบอร์ติดต่อในกลุ่มบริหารงานบุคคล</p>
+        </div>
+        <button class="admin-add-btn" onclick="openContactModal()">+ เพิ่มรายชื่อ</button>
+      </div>
+      <div class="contact-grid" id="contactGrid"></div>
+    </div>
+
+    <!-- ===== PAGE: SECURITY (Admin only) ===== -->
+    <div class="page" id="page-security">
+      <div class="page-header">
+        <h2>🔑 จัดการรหัสผ่าน Admin</h2>
+        <p>เปลี่ยนรหัสผ่านและจัดการความปลอดภัยของระบบ</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:20px;max-width:560px;">
+
+        <!-- เปลี่ยนรหัสผ่าน -->
+        <div class="security-card">
+          <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:16px;color:#1e293b;">🔒 เปลี่ยนรหัสผ่าน Admin</h3>
+          <div class="form-group">
+            <label>รหัสผ่านปัจจุบัน</label>
+            <input type="password" id="cp_current" placeholder="ใส่รหัสผ่านปัจจุบัน...">
+          </div>
+          <div class="form-group">
+            <label>รหัสผ่านใหม่</label>
+            <input type="password" id="cp_new" placeholder="อย่างน้อย 8 ตัว มีตัวเลขและอักษรพิมพ์ใหญ่..." oninput="checkStrength(this.value)">
+            <div class="strength-bar" id="strengthBar"></div>
+            <div class="strength-text" id="strengthText"></div>
+          </div>
+          <div class="form-group">
+            <label>ยืนยันรหัสผ่านใหม่</label>
+            <input type="password" id="cp_confirm" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง...">
+          </div>
+          <div id="cp_error" style="color:var(--danger);font-size:0.8rem;margin-bottom:10px;display:none;"></div>
+          <div id="cp_success" style="color:var(--success);font-size:0.8rem;margin-bottom:10px;display:none;"></div>
+          <button class="btn-save" onclick="changePassword()" style="width:100%;">🔐 บันทึกรหัสผ่านใหม่</button>
+        </div>
+
+        <!-- เครื่องมือสร้าง Hash -->
+        <div class="security-card">
+          <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:6px;color:#1e293b;">🛠️ เครื่องมือสร้าง Hash (สำหรับตั้งรหัสผ่านในโค้ด)</h3>
+          <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;line-height:1.5;">
+            ใส่รหัสผ่านที่ต้องการ → คัดลอก hash → วางแทนค่า <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">ADMIN_PASSWORD_HASH</code> ในโค้ด
+          </p>
+          <div class="form-group">
+            <label>รหัสผ่านที่ต้องการ</label>
+            <input type="text" id="hashInput" placeholder="พิมพ์รหัสผ่านที่ต้องการ..." oninput="generateHash()">
+          </div>
+          <label style="font-size:0.8rem;font-weight:600;color:#475569;">SHA-256 Hash:</label>
+          <div class="hash-output" id="hashOutput">— พิมพ์รหัสผ่านด้านบนเพื่อสร้าง hash —</div>
+          <button class="copy-btn" onclick="copyHash()">📋 คัดลอก Hash</button>
+        </div>
+
+        <!-- ข้อมูลความปลอดภัยปัจจุบัน -->
+        <div class="security-card">
+          <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:14px;color:#1e293b;">📊 สถานะความปลอดภัย</h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;">
+              <span style="font-size:0.85rem;">🔐 รหัสผ่าน</span>
+              <span style="font-size:0.8rem;font-weight:700;color:var(--success);" id="secPwStatus">✅ ใช้ Hash (SHA-256)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;">
+              <span style="font-size:0.85rem;">🚫 Rate Limit การเข้าสู่ระบบ</span>
+              <span style="font-size:0.8rem;font-weight:700;color:var(--success);">✅ 5 ครั้ง / 5 นาที</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;">
+              <span style="font-size:0.85rem;">⏱ Session Timeout</span>
+              <span style="font-size:0.8rem;font-weight:700;color:var(--success);">✅ 30 นาที</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8fafc;border-radius:8px;">
+              <span style="font-size:0.85rem;">🔑 API Key</span>
+              <span style="font-size:0.8rem;font-weight:700;color:var(--accent);" id="secApiStatus">⚠️ ควรใช้ Proxy/Backend</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- LOGIN -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">
+      <div class="modal-title" style="margin-bottom:4px;">เข้าสู่ระบบ Admin</div>
+      <p style="font-size:0.8rem;color:var(--muted);">กรุณาใส่รหัสผ่านเพื่อเข้าจัดการระบบ</p>
+    </div>
+    <!-- Locked message -->
+    <div class="login-locked" id="loginLocked">
+      🔒 ระบบถูกล็อก เนื่องจากพิมพ์รหัสผ่านผิดหลายครั้ง<br>
+      กรุณารอ <strong id="lockCountdown"></strong> วินาที
+    </div>
+    <div class="form-group">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="loginPassword" placeholder="ใส่รหัสผ่าน..." onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-error" id="loginError"></div>
+      <!-- attempt dots -->
+      <div class="attempt-dots" id="attemptDots">
+        <div class="attempt-dot" id="dot0"></div>
+        <div class="attempt-dot" id="dot1"></div>
+        <div class="attempt-dot" id="dot2"></div>
+        <div class="attempt-dot" id="dot3"></div>
+        <div class="attempt-dot" id="dot4"></div>
+      </div>
+      <div style="font-size:0.68rem;color:var(--muted);margin-top:3px;">จำนวนครั้งที่เหลือ: <span id="attemptsLeft">5</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('loginModal')">ยกเลิก</button>
+      <button class="btn-save" id="btnDoLogin" onclick="doLogin()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBSYSTEM MODAL -->
+<div class="modal-overlay" id="subsystemModal">
+  <div class="modal-box">
+    <div class="modal-title" id="subsystemModalTitle">เพิ่มระบบงาน</div>
+    <div class="form-group"><label>ชื่อระบบงาน</label><input type="text" id="ss_name" placeholder="เช่น ระบบการลา"></div>
+    <div class="form-group"><label>คำอธิบาย</label><textarea id="ss_desc" placeholder="รายละเอียดระบบงาน..."></textarea></div>
+    <div class="form-group"><label>URL ลิงก์</label><input type="text" id="ss_url" placeholder="https://..."></div>
+    <div class="form-group"><label>ไอคอน (emoji)</label><input type="text" id="ss_icon" placeholder="เช่น 📋" maxlength="4"></div>
+    <div class="form-group">
+      <label>สีพื้นหลังไอคอน</label>
+      <select id="ss_color">
+        <option value="#dbeafe">💙 น้ำเงิน</option>
+        <option value="#dcfce7">💚 เขียว</option>
+        <option value="#fef3c7">💛 เหลือง</option>
+        <option value="#fce7f3">🩷 ชมพู</option>
+        <option value="#ede9fe">💜 ม่วง</option>
+        <option value="#ffedd5">🧡 ส้ม</option>
+      </select>
+    </div>
+    <input type="hidden" id="ss_editIdx" value="-1">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('subsystemModal')">ยกเลิก</button>
+      <button class="btn-save" onclick="saveSubsystem()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ANNOUNCE MODAL -->
+<div class="modal-overlay" id="announceModal">
+  <div class="modal-box">
+    <div class="modal-title" id="announceModalTitle">เพิ่มประกาศ</div>
+    <div class="form-group"><label>หัวข้อประกาศ</label><input type="text" id="an_title" placeholder="หัวข้อ..."></div>
+    <div class="form-group"><label>รายละเอียด</label><textarea id="an_body" placeholder="รายละเอียด..."></textarea></div>
+    <div class="form-group">
+      <label>ประเภท</label>
+      <select id="an_type">
+        <option value="urgent">🔴 ด่วน</option>
+        <option value="normal">🔵 ทั่วไป</option>
+        <option value="info">🟢 แจ้งทราบ</option>
+      </select>
+    </div>
+    <div class="form-group"><label>วันที่</label><input type="date" id="an_date"></div>
+    <input type="hidden" id="an_editIdx" value="-1">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('announceModal')">ยกเลิก</button>
+      <button class="btn-save" onclick="saveAnnounce()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT MODAL -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal-box">
+    <div class="modal-title" id="eventModalTitle">เพิ่มกิจกรรม</div>
+    <div class="form-group"><label>ชื่อกิจกรรม</label><input type="text" id="ev_title" placeholder="ชื่อกิจกรรม..."></div>
+    <div class="form-group"><label>วันที่</label><input type="date" id="ev_date"></div>
+    <div class="form-group"><label>รายละเอียด</label><textarea id="ev_desc" placeholder="รายละเอียด..."></textarea></div>
+    <input type="hidden" id="ev_editIdx" value="-1">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('eventModal')">ยกเลิก</button>
+      <button class="btn-save" onclick="saveEvent()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal-box">
+    <div class="modal-title" id="contactModalTitle">เพิ่มรายชื่อ</div>
+    <div class="form-group"><label>ชื่อ-สกุล</label><input type="text" id="ct_name" placeholder="ชื่อ-สกุล..."></div>
+    <div class="form-group"><label>ตำแหน่ง / บทบาท</label><input type="text" id="ct_role" placeholder="เช่น หัวหน้ากลุ่มบริหารงานบุคคล"></div>
+    <div class="form-group"><label>เบอร์โทร</label><input type="text" id="ct_phone" placeholder="0xx-xxx-xxxx"></div>
+    <div class="form-group">
+      <label>สีพื้นหลัง Avatar</label>
+      <select id="ct_color">
+        <option value="#1a56a0">💙 น้ำเงิน</option>
+        <option value="#16a34a">💚 เขียว</option>
+        <option value="#d97706">🧡 ส้ม</option>
+        <option value="#9333ea">💜 ม่วง</option>
+        <option value="#dc2626">❤️ แดง</option>
+        <option value="#0891b2">🩵 ฟ้า</option>
+      </select>
+    </div>
+    <input type="hidden" id="ct_editIdx" value="-1">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('contactModal')">ยกเลิก</button>
+      <button class="btn-save" onclick="saveContact()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="modal-overlay" id="staffModal">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-title">✏️ แก้ไขจำนวนบุคลากร</div>
+    <div class="staff-row"><label>👑 ฝ่ายบริหาร</label><input type="number" id="sf_admin" min="0"></div>
+    <div class="staff-row"><label>🎓 ครูและครูผู้ช่วย</label><input type="number" id="sf_teacher" min="0"></div>
+    <div class="staff-row"><label>📋 พนักงานราชการ</label><input type="number" id="sf_gov" min="0"></div>
+    <div class="staff-row"><label>📝 ครูอัตราจ้าง</label><input type="number" id="sf_contract" min="0"></div>
+    <div class="staff-row"><label>🛠️ เจ้าหน้าที่และพนักงานบริการ</label><input type="number" id="sf_support" min="0"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('staffModal')">ยกเลิก</button>
+      <button class="btn-save" onclick="saveStaff()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  CONFIG — Google Sheets API
+//  ⚠️  API Key ควรย้ายไปฝั่ง backend / proxy เพื่อความปลอดภัยสูงสุด
+// ============================================================
+const SHEET_ID = '1JcloUZYauz1dVR3rh1TAYUyareaS34SQ6Gk4ZFalSaU';
+const API_KEY  = 'AIzaSyBm1cANHUvKkaYWt58KaGJ_a0T4YbyAPGU';
+
+// ============================================================
+//  🔐 SECURITY CONFIG
+//  วิธีเปลี่ยนรหัสผ่าน:
+//    1. เข้าระบบ Admin → หน้า "จัดการรหัสผ่าน" → ใช้เครื่องมือสร้าง Hash
+//    2. คัดลอก hash ที่ได้มาวางแทนค่า ADMIN_PASSWORD_HASH ด้านล่าง
+//
+//  รหัสผ่านปัจจุบัน: admin1234
+//  (hash SHA-256 ด้านล่าง = admin1234)
+// ============================================================
+const SECURITY = {
+  // SHA-256 hash ของรหัสผ่าน admin — ไม่เก็บ plain text
+  ADMIN_PASSWORD_HASH: '30d531259dd0b5401e9b59da856105734449ea4fe2969a702bbbeefc25000aad',
+
+  MAX_ATTEMPTS:    5,         // จำนวนครั้งสูงสุดที่ยอมให้พิมพ์ผิด
+  LOCKOUT_MS:      5 * 60 * 1000,  // ล็อก 5 นาที (milliseconds)
+  SESSION_MS:      30 * 60 * 1000, // session timeout 30 นาที
+  WARN_BEFORE_MS:  5 * 60 * 1000,  // เตือนก่อน 5 นาที
+};
+
+// ============================================================
+//  RATE LIMIT STATE (in-memory ไม่เก็บใน localStorage)
+// ============================================================
+let loginAttempts  = 0;
+let lockedUntil    = 0;
+let lockTimerInterval = null;
+
+// ============================================================
+//  SESSION STATE
+// ============================================================
+let sessionExpireAt   = 0;
+let sessionInterval   = null;
+
+// ============================================================
+//  SHA-256 HASH (Web Crypto API — built-in browser)
+// ============================================================
+async function sha256(message) {
+  const msgBuffer  = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray  = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================
+//  STAFF DATA — ดึงจาก Google Sheets Sheet: Dashboard
+//  โครงสร้าง Sheet: key | label | icon | color | value | sub
+//  ตัวอย่างแถว:  admin | ฝ่ายบริหาร | 👑 | blue | 4 | คน
+// ============================================================
+let staffData = []; // เก็บข้อมูลที่ดึงจาก Sheets
+
+function renderStaffCards() {
+  const grid = document.getElementById('staffStatGrid');
+  if (!staffData.length) {
+    grid.innerHTML = '<div class="stat-card" style="grid-column:1/-1;color:var(--muted);font-size:0.85rem;text-align:center;">ไม่พบข้อมูลใน Sheet: Dashboard</div>';
+    return;
+  }
+
+  // คำนวณยอดรวมจากแถวที่ไม่ใช่ total
+  const rows = staffData.filter(r => r.key !== 'total');
+  const total = rows.reduce((s, r) => s + (parseInt(r.value) || 0), 0);
+
+  // การ์ดรวมทั้งหมด (คำนวณอัตโนมัติ)
+  let html = `<div class="stat-card" style="border-left-color:#1a56a0;">
+    <span class="stat-label"><span class="stat-icon">👥</span>บุคลากรทั้งหมด</span>
+    <span class="stat-value">${total}</span>
+    <span class="stat-sub">รวมทุกประเภท</span>
+  </div>`;
+
+  // การ์ดรายประเภทจาก Sheets
+  rows.forEach(r => {
+    const colorMap = { blue:'', green:'green', amber:'amber', red:'red', purple:'', teal:'' };
+    const cls = colorMap[r.color] || '';
+    const borderColor = { blue:'#1a56a0', green:'#16a34a', amber:'#f59e0b', red:'#dc2626', purple:'#9333ea', teal:'#0891b2' }[r.color] || '#1a56a0';
+    html += `<div class="stat-card ${cls}" style="${cls ? '' : 'border-left-color:' + borderColor}">
+      <span class="stat-label"><span class="stat-icon">${r.icon || ''}</span>${r.label || ''}</span>
+      <span class="stat-value">${r.value || 0}</span>
+      <span class="stat-sub">${r.sub || 'คน'}</span>
+    </div>`;
+  });
+  grid.innerHTML = html;
+}
+
+
+const SHEETS = { subsystems: 'Subsystems', announces: 'Announces', events: 'Events', contacts: 'Contacts', dashboard: 'Dashboard' };
+let data = { subsystems: [], announces: [], events: [], contacts: [] };
+
+async function fetchSheet(sheetName) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_KEY}`;
+  try {
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (!json.values || json.values.length < 2) return [];
+    const [headers, ...rows] = json.values;
+    return rows.map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h.trim()] = (row[i] || '').trim());
+      return obj;
+    });
+  } catch(e) { console.error(`fetchSheet error (${sheetName}):`, e); return []; }
+}
+
+// ============================================================
+//  LOCAL STORAGE
+// ============================================================
+function saveLocal() { localStorage.setItem('hr_data', JSON.stringify(data)); }
+function loadLocal() {
+  const saved = localStorage.getItem('hr_data');
+  if (saved) { try { return JSON.parse(saved); } catch(e) {} }
+  return null;
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+window.onload = async function() {
+  const d = new Date();
+  document.getElementById('todayDate').textContent = d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+  showGlobalLoading(true);
+  let sheetsOk = false;
+  try {
+    const [ss, an, ev, ct, dash] = await Promise.all([
+      fetchSheet(SHEETS.subsystems), fetchSheet(SHEETS.announces),
+      fetchSheet(SHEETS.events),     fetchSheet(SHEETS.contacts),
+      fetchSheet(SHEETS.dashboard),
+    ]);
+    if (ss.length || an.length || ev.length || ct.length || dash.length) {
+      data = { subsystems: ss, announces: an, events: ev, contacts: ct };
+      if (dash.length) staffData = dash;
+      sheetsOk = true;
+      showDataSource('sheets');
+    }
+  } catch(e) { console.warn('Sheets fetch failed:', e); }
+
+  if (!sheetsOk) {
+    const local = loadLocal();
+    if (local) { data = local; showDataSource('local'); }
+    else        { data = getDefaultData(); showDataSource('default'); }
+    // fallback staff data
+    staffData = [
+      { key:'admin',    label:'ฝ่ายบริหาร',                  icon:'👑', color:'blue',  value:'4',  sub:'คน' },
+      { key:'teacher',  label:'ครูและครูผู้ช่วย',             icon:'🎓', color:'green', value:'28', sub:'คน' },
+      { key:'gov',      label:'พนักงานราชการ',                icon:'📋', color:'amber', value:'5',  sub:'คน' },
+      { key:'contract', label:'ครูอัตราจ้าง',                 icon:'📝', color:'red',   value:'3',  sub:'คน' },
+      { key:'support',  label:'เจ้าหน้าที่และพนักงานบริการ', icon:'🛠️', color:'',      value:'6',  sub:'คน' },
+    ];
+  }
+
+  showGlobalLoading(false);
+  renderAll();
+  initCalendar();
+};
+
+function showGlobalLoading(show) {
+  let el = document.getElementById('globalLoader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'globalLoader';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:Sarabun,sans-serif;';
+    el.innerHTML = '<div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#1a56a0;border-radius:50%;animation:spin 0.8s linear infinite;"></div><p style="color:#1a56a0;font-weight:600;">กำลังโหลดข้อมูลจาก Google Sheets...</p>';
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+    document.body.appendChild(el);
+  }
+  el.style.display = show ? 'flex' : 'none';
+}
+
+function showDataSource(src) {
+  const msgs = { sheets: '🟢 ข้อมูลจาก Google Sheets', local: '🟡 ข้อมูลจากการแก้ไขล่าสุด (Local)', default: '🔵 ข้อมูลตัวอย่าง' };
+  let el = document.getElementById('dataSourceBadge');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'dataSourceBadge';
+    el.style.cssText = 'position:fixed;bottom:12px;right:12px;background:#1e293b;color:#fff;padding:5px 12px;border-radius:20px;font-size:0.72rem;z-index:500;opacity:0.85;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msgs[src] || '';
+}
+
+// ============================================================
+//  DEFAULT DATA
+// ============================================================
+function getDefaultData() {
+  return {
+    subsystems: [
+      { name: 'ระบบข้อมูลการลาและไปราชการ', desc: 'ติดตามการลา ไปราชการ สถิติรายบุคคลและภาพรวม', url: '#', icon: '📋', color: '#dbeafe' },
+      { name: 'ระบบประเมินผลการปฏิบัติงาน', desc: 'บันทึกและติดตามผลการประเมินของบุคลากร', url: '#', icon: '⭐', color: '#fef3c7' },
+      { name: 'ระบบทะเบียนประวัติบุคลากร', desc: 'ข้อมูลส่วนตัว วุฒิการศึกษา และประวัติการทำงาน', url: '#', icon: '👤', color: '#dcfce7' },
+      { name: 'ระบบคำสั่งแต่งตั้ง', desc: 'คำสั่งมอบหมายงาน แต่งตั้งคณะกรรมการต่างๆ', url: '#', icon: '📜', color: '#ede9fe' },
+    ],
+    announces: [
+      { title: 'กำหนดส่งแบบประเมินผลการปฏิบัติงาน ครั้งที่ 1/2568', body: 'ขอให้บุคลากรทุกท่านส่งแบบประเมินฯ ภายในวันที่ 31 พฤษภาคม 2568', type: 'urgent', date: '2568-05-08' },
+      { title: 'การประชุมกลุ่มบริหารงานบุคคล ประจำเดือนพฤษภาคม', body: 'ขอเชิญเข้าร่วมประชุมประจำเดือน วันพุธที่ 14 พฤษภาคม 2568 เวลา 13.00 น.', type: 'normal', date: '2568-05-07' },
+      { title: 'แจ้งผลการพิจารณาเลื่อนเงินเดือน ครั้งที่ 1/2568', body: 'ประกาศผลการพิจารณาเลื่อนเงินเดือนข้าราชการและลูกจ้างประจำ', type: 'info', date: '2568-05-01' },
+    ],
+    events: [
+      { title: 'ส่งแบบประเมินผลการปฏิบัติงาน', date: '2025-05-31', desc: 'กำหนดส่งแบบประเมินฯ ครั้งที่ 1/2568' },
+      { title: 'ประชุมกลุ่มบริหารงานบุคคล', date: '2025-05-14', desc: 'ห้องประชุมชั้น 2 เวลา 13.00 น.' },
+      { title: 'วันหยุดวันวิสาขบูชา', date: '2025-05-12', desc: 'หยุดราชการ' },
+      { title: 'ส่งรายงานการไปราชการ', date: '2025-05-20', desc: 'ครบกำหนดส่งรายงาน เมษายน–พฤษภาคม' },
+    ],
+    contacts: [
+      { name: 'นายสมชาย ใจดี', role: 'หัวหน้ากลุ่มบริหารงานบุคคล', phone: '081-234-5678', color: '#1a56a0' },
+      { name: 'นางสาวสมหญิง รักดี', role: 'เจ้าหน้าที่บุคคล', phone: '082-345-6789', color: '#16a34a' },
+      { name: 'นายวิชัย มานะ', role: 'งานทะเบียนประวัติ', phone: '083-456-7890', color: '#d97706' },
+      { name: 'นางประภา สุขใจ', role: 'งานอัตรากำลัง', phone: '084-567-8901', color: '#9333ea' },
+    ]
+  };
+}
+
+function renderAll() {
+  renderSubsystems(); renderAnnounces(); renderContacts();
+  renderDashAnnounce(); renderDashEvents(); renderAllEvents();
+  renderStaffCards();
+}
+
+// ============================================================
+//  SIDEBAR & NAVIGATION
+// ============================================================
+let sidebarOpen = false; // เริ่มต้นซ่อนไว้
+
+function openSidebar() {
+  sidebarOpen = true;
+  document.getElementById('sidebar').classList.remove('hidden');
+  document.getElementById('sidebarOverlay').classList.add('visible');
+  document.body.classList.add('sidebar-open');
+}
+
+function closeSidebar() {
+  sidebarOpen = false;
+  document.getElementById('sidebar').classList.add('hidden');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+  document.body.classList.remove('sidebar-open');
+}
+
+function toggleSidebar() {
+  if (sidebarOpen) closeSidebar();
+  else openSidebar();
+}
+
+// ปิด sidebar ด้วย Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && sidebarOpen) closeSidebar(); });
+
+const pageTitles = { dashboard: 'หน้าหลัก', subsystems: 'ระบบงาน', announce: 'ประกาศ / ข่าวสาร', calendar: 'ปฏิทินกิจกรรม', contacts: 'ข้อมูลติดต่อ', security: 'จัดการรหัสผ่าน' };
+
+function showPage(id, el) {
+  if (id === 'security' && !document.body.classList.contains('admin-mode')) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('topbarTitle').textContent = pageTitles[id] || '';
+  if (document.body.classList.contains('admin-mode')) resetSessionTimer();
+  // ปิด sidebar หลังเลือกเมนู (ทุกหน้าจอ)
+  closeSidebar();
+}
+
+// ============================================================
+//  🔐 ADMIN — LOGIN (พร้อม Rate Limit + Hash)
+// ============================================================
+function openLoginModal() {
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginModal').classList.add('open');
+  updateAttemptUI();
+  checkLockState();
+  setTimeout(() => document.getElementById('loginPassword').focus(), 100);
+}
+
+async function doLogin() {
+  // ตรวจสอบ lock
+  if (Date.now() < lockedUntil) return;
+
+  const pw   = document.getElementById('loginPassword').value;
+  const hash = await sha256(pw);
+
+  if (hash === SECURITY.ADMIN_PASSWORD_HASH) {
+    // สำเร็จ
+    loginAttempts = 0;
+    lockedUntil   = 0;
+    updateAttemptUI();
+    activateAdminMode();
+    closeModal('loginModal');
+  } else {
+    // ล้มเหลว
+    loginAttempts++;
+    updateAttemptUI();
+
+    const remaining = SECURITY.MAX_ATTEMPTS - loginAttempts;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'block';
+
+    if (loginAttempts >= SECURITY.MAX_ATTEMPTS) {
+      // ล็อกระบบ
+      lockedUntil = Date.now() + SECURITY.LOCKOUT_MS;
+      loginAttempts = 0;
+      errEl.textContent = '';
+      startLockCountdown();
+    } else {
+      errEl.textContent = `❌ รหัสผ่านไม่ถูกต้อง — เหลืออีก ${remaining} ครั้ง`;
+    }
+  }
+}
+
+function updateAttemptUI() {
+  const used = loginAttempts;
+  for (let i = 0; i < 5; i++) {
+    document.getElementById('dot' + i).classList.toggle('used', i < used);
+  }
+  document.getElementById('attemptsLeft').textContent = Math.max(0, SECURITY.MAX_ATTEMPTS - used);
+}
+
+function checkLockState() {
+  if (Date.now() < lockedUntil) startLockCountdown();
+}
+
+function startLockCountdown() {
+  const lockedEl  = document.getElementById('loginLocked');
+  const countEl   = document.getElementById('lockCountdown');
+  const pwInput   = document.getElementById('loginPassword');
+  const btnLogin  = document.getElementById('btnDoLogin');
+
+  lockedEl.style.display = 'block';
+  pwInput.disabled = true;
+  btnLogin.disabled = true;
+
+  if (lockTimerInterval) clearInterval(lockTimerInterval);
+  lockTimerInterval = setInterval(() => {
+    const remain = Math.max(0, lockedUntil - Date.now());
+    if (remain <= 0) {
+      clearInterval(lockTimerInterval);
+      lockedEl.style.display = 'none';
+      pwInput.disabled = false;
+      btnLogin.disabled = false;
+      document.getElementById('loginError').style.display = 'none';
+      updateAttemptUI();
+    } else {
+      countEl.textContent = Math.ceil(remain / 1000);
+    }
+  }, 500);
+}
+
+// ============================================================
+//  🕐 SESSION TIMEOUT
+// ============================================================
+function activateAdminMode() {
+  document.body.classList.add('admin-mode');
+  document.getElementById('btnAdminLogin').style.display  = 'none';
+  document.getElementById('btnAdminLogout').style.display = 'flex';
+  document.getElementById('sidebarAdminName').textContent = 'ผู้ดูแลระบบ';
+  document.getElementById('sidebarAdminRole').textContent = 'Admin Mode';
+  document.getElementById('sidebarAvatarLetter').textContent = 'A';
+  // แสดงเมนู Admin
+  document.querySelectorAll('.nav-item.admin-controls, .nav-section-label.admin-controls').forEach(el => {
+    el.style.display = el.classList.contains('nav-item') ? 'flex' : 'block';
+  });
+  startSessionTimer();
+}
+
+function startSessionTimer() {
+  sessionExpireAt = Date.now() + SECURITY.SESSION_MS;
+  document.getElementById('sessionTimer').style.display = 'inline-flex';
+  if (sessionInterval) clearInterval(sessionInterval);
+  sessionInterval = setInterval(tickSession, 1000);
+}
+
+function resetSessionTimer() {
+  sessionExpireAt = Date.now() + SECURITY.SESSION_MS;
+  document.getElementById('sessionTimer').classList.remove('warning');
+}
+
+function tickSession() {
+  const remain = sessionExpireAt - Date.now();
+  if (remain <= 0) {
+    adminLogout();
+    showToast('⏱ หมดเวลา Session — ออกจากระบบอัตโนมัติ', 'warning');
+    return;
+  }
+  const min = Math.floor(remain / 60000);
+  const sec = Math.floor((remain % 60000) / 1000);
+  document.getElementById('sessionTimerText').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  document.getElementById('adminBarTimer').textContent = `หมดเวลาใน ${min}:${sec.toString().padStart(2,'0')}`;
+  const timerEl = document.getElementById('sessionTimer');
+  if (remain <= SECURITY.WARN_BEFORE_MS) timerEl.classList.add('warning');
+  else timerEl.classList.remove('warning');
+}
+
+// reset timer เมื่อมี activity
+['click','keydown','mousemove'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    if (document.body.classList.contains('admin-mode')) resetSessionTimer();
+  });
+});
+
+function adminLogout() {
+  clearInterval(sessionInterval);
+  document.body.classList.remove('admin-mode');
+  document.getElementById('btnAdminLogin').style.display  = 'flex';
+  document.getElementById('btnAdminLogout').style.display = 'none';
+  document.getElementById('sidebarAdminName').textContent = 'ผู้เยี่ยมชม';
+  document.getElementById('sidebarAdminRole').textContent = 'ไม่ได้เข้าสู่ระบบ';
+  document.getElementById('sidebarAvatarLetter').textContent = '?';
+  document.getElementById('sessionTimer').style.display = 'none';
+  document.getElementById('adminBarTimer').textContent = '';
+  document.querySelectorAll('.nav-item.admin-controls, .nav-section-label.admin-controls').forEach(el => {
+    el.style.display = 'none';
+  });
+  // กลับหน้า dashboard
+  showPage('dashboard', document.querySelector('.nav-item'));
+  document.querySelector('.nav-item').classList.add('active');
+}
+
+// ============================================================
+//  🔑 CHANGE PASSWORD (ในหน้า Security)
+// ============================================================
+function checkStrength(pw) {
+  const bar  = document.getElementById('strengthBar');
+  const text = document.getElementById('strengthText');
+  if (!pw) { bar.className = 'strength-bar'; text.textContent = ''; return; }
+  const strong = pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw);
+  const medium = pw.length >= 8 && (/[A-Z]/.test(pw) || /[0-9]/.test(pw));
+  if (strong) { bar.className = 'strength-bar strong'; text.style.color = '#16a34a'; text.textContent = '✅ รหัสผ่านแข็งแกร่ง'; }
+  else if (medium) { bar.className = 'strength-bar medium'; text.style.color = '#d97706'; text.textContent = '⚠️ ปานกลาง — เพิ่มตัวพิมพ์ใหญ่/อักขระพิเศษ'; }
+  else { bar.className = 'strength-bar weak'; text.style.color = '#dc2626'; text.textContent = '❌ อ่อนเกินไป — ต้องการอย่างน้อย 8 ตัว'; }
+}
+
+async function changePassword() {
+  const cur     = document.getElementById('cp_current').value;
+  const newPw   = document.getElementById('cp_new').value;
+  const confirm = document.getElementById('cp_confirm').value;
+  const errEl   = document.getElementById('cp_error');
+  const okEl    = document.getElementById('cp_success');
+  errEl.style.display = 'none';
+  okEl.style.display  = 'none';
+
+  // ตรวจสอบรหัสผ่านปัจจุบัน
+  const curHash = await sha256(cur);
+  if (curHash !== SECURITY.ADMIN_PASSWORD_HASH) {
+    errEl.textContent = '❌ รหัสผ่านปัจจุบันไม่ถูกต้อง'; errEl.style.display = 'block'; return;
+  }
+  if (newPw.length < 8) {
+    errEl.textContent = '❌ รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร'; errEl.style.display = 'block'; return;
+  }
+  if (newPw !== confirm) {
+    errEl.textContent = '❌ รหัสผ่านใหม่ไม่ตรงกัน'; errEl.style.display = 'block'; return;
+  }
+
+  // สร้าง hash ใหม่
+  const newHash = await sha256(newPw);
+  SECURITY.ADMIN_PASSWORD_HASH = newHash;
+
+  // แสดง hash ให้คัดลอกไปวางในโค้ด
+  okEl.innerHTML = `✅ เปลี่ยนรหัสผ่านสำเร็จสำหรับ session นี้<br>
+    <strong>สำคัญ:</strong> เพื่อให้ถาวร ให้คัดลอก hash ด้านล่างไปวางในโค้ด:<br>
+    <code style="font-size:0.72rem;word-break:break-all;background:#f1f5f9;padding:4px 8px;border-radius:4px;display:block;margin-top:6px;">${newHash}</code>`;
+  okEl.style.display = 'block';
+  ['cp_current','cp_new','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+  checkStrength('');
+}
+
+// ============================================================
+//  🛠️ HASH GENERATOR
+// ============================================================
+async function generateHash() {
+  const val = document.getElementById('hashInput').value;
+  const el  = document.getElementById('hashOutput');
+  if (!val) { el.textContent = '— พิมพ์รหัสผ่านด้านบนเพื่อสร้าง hash —'; return; }
+  el.textContent = await sha256(val);
+}
+
+function copyHash() {
+  const hash = document.getElementById('hashOutput').textContent;
+  if (!hash || hash.startsWith('—')) return;
+  navigator.clipboard.writeText(hash).then(() => showToast('📋 คัดลอก Hash แล้ว'));
+}
+
+// ============================================================
+//  TOAST NOTIFICATION
+// ============================================================
+function showToast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:60px;right:16px;background:${type==='warning'?'#dc2626':'#1e293b'};color:#fff;padding:10px 18px;border-radius:10px;font-size:0.82rem;font-weight:600;z-index:9999;animation:fadeInUp 0.3s ease;`;
+  t.textContent = msg;
+  const s = document.createElement('style');
+  s.textContent = '@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}';
+  document.head.appendChild(s);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ============================================================
+//  MODAL HELPERS
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ============================================================
+//  SUBSYSTEMS
+// ============================================================
+function renderSubsystems() {
+  const grid = document.getElementById('subsystemGrid');
+  grid.innerHTML = data.subsystems.map((s, i) => `
+    <div class="subsystem-card">
+      <div class="subsystem-icon" style="background:${s.color}">${s.icon}</div>
+      <h4>${s.name}</h4>
+      <p>${s.desc}</p>
+      <div class="subsystem-footer">
+        <a href="${s.url}" target="_blank" class="btn-open">เปิดระบบ ↗</a>
+        <div class="admin-controls">
+          <button class="btn-edit" onclick="openSubsystemModal(${i})">✏️</button>
+          <button class="btn-del"  onclick="delSubsystem(${i})">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openSubsystemModal(idx = -1) {
+  document.getElementById('ss_editIdx').value = idx;
+  if (idx >= 0) {
+    const s = data.subsystems[idx];
+    document.getElementById('ss_name').value  = s.name;
+    document.getElementById('ss_desc').value  = s.desc;
+    document.getElementById('ss_url').value   = s.url;
+    document.getElementById('ss_icon').value  = s.icon;
+    document.getElementById('ss_color').value = s.color;
+    document.getElementById('subsystemModalTitle').textContent = 'แก้ไขระบบงาน';
+  } else {
+    ['ss_name','ss_desc','ss_url','ss_icon'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('subsystemModalTitle').textContent = 'เพิ่มระบบงาน';
+  }
+  document.getElementById('subsystemModal').classList.add('open');
+}
+
+function saveSubsystem() {
+  const idx   = parseInt(document.getElementById('ss_editIdx').value);
+  const entry = { name: document.getElementById('ss_name').value, desc: document.getElementById('ss_desc').value, url: document.getElementById('ss_url').value, icon: document.getElementById('ss_icon').value || '🔗', color: document.getElementById('ss_color').value };
+  if (idx >= 0) data.subsystems[idx] = entry; else data.subsystems.push(entry);
+  saveLocal(); renderSubsystems(); closeModal('subsystemModal');
+}
+
+function delSubsystem(idx) {
+  if (confirm('ลบระบบงานนี้?')) { data.subsystems.splice(idx, 1); saveLocal(); renderSubsystems(); }
+}
+
+// ============================================================
+//  ANNOUNCES
+// ============================================================
+const typeLabel = { urgent: ['tag-urgent','ด่วน','urgent'], normal: ['tag-normal','ทั่วไป','normal'], info: ['tag-info','แจ้งทราบ','info'] };
+
+function renderAnnounces() {
+  const list = document.getElementById('announceList');
+  list.innerHTML = data.announces.map((a, i) => {
+    const [cls, label, dot] = typeLabel[a.type] || typeLabel.normal;
+    return `<div class="announce-item">
+      <div class="announce-dot ${dot}"></div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="tag ${cls}">${label}</span>
+          <span class="announce-title">${a.title}</span>
+        </div>
+        <div class="announce-body">${a.body}</div>
+        <div class="announce-meta">📅 ${a.date}
+          <span class="admin-controls" style="margin-left:8px;">
+            <button class="btn-edit" onclick="openAnnounceModal(${i})">✏️</button>
+            <button class="btn-del"  onclick="delAnnounce(${i})">🗑️</button>
+          </span>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:0.85rem;">ไม่มีประกาศ</p>';
+}
+
+function renderDashAnnounce() {
+  const el = document.getElementById('dashAnnounce');
+  el.innerHTML = '<div class="announce-list">' + data.announces.slice(0,3).map(a => {
+    const [cls, label, dot] = typeLabel[a.type] || typeLabel.normal;
+    return `<div class="announce-item" style="padding:10px 14px;">
+      <div class="announce-dot ${dot}"></div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="tag ${cls}">${label}</span>
+          <span class="announce-title" style="font-size:0.82rem;">${a.title}</span>
+        </div>
+        <div class="announce-meta" style="margin-top:4px;">📅 ${a.date}</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function openAnnounceModal(idx = -1) {
+  document.getElementById('an_editIdx').value = idx;
+  if (idx >= 0) {
+    const a = data.announces[idx];
+    document.getElementById('an_title').value = a.title;
+    document.getElementById('an_body').value  = a.body;
+    document.getElementById('an_type').value  = a.type;
+    document.getElementById('an_date').value  = a.date;
+    document.getElementById('announceModalTitle').textContent = 'แก้ไขประกาศ';
+  } else {
+    ['an_title','an_body','an_date'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('announceModalTitle').textContent = 'เพิ่มประกาศ';
+  }
+  document.getElementById('announceModal').classList.add('open');
+}
+
+function saveAnnounce() {
+  const idx = parseInt(document.getElementById('an_editIdx').value);
+  const entry = { title: document.getElementById('an_title').value, body: document.getElementById('an_body').value, type: document.getElementById('an_type').value, date: document.getElementById('an_date').value };
+  if (idx >= 0) data.announces[idx] = entry; else data.announces.unshift(entry);
+  saveLocal(); renderAnnounces(); renderDashAnnounce(); closeModal('announceModal');
+}
+
+function delAnnounce(idx) {
+  if (confirm('ลบประกาศนี้?')) { data.announces.splice(idx, 1); saveLocal(); renderAnnounces(); renderDashAnnounce(); }
+}
+
+// ============================================================
+//  EVENTS / CALENDAR
+// ============================================================
+let calYear, calMonth;
+function initCalendar() { const now = new Date(); calYear = now.getFullYear(); calMonth = now.getMonth(); renderCalendar(); renderAllEvents(); }
+function calMove(dir) { calMonth += dir; if (calMonth > 11) { calMonth = 0; calYear++; } if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+
+function renderCalendar() {
+  const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  document.getElementById('calMonthLabel').textContent = `${thMonths[calMonth]} ${calYear + 543}`;
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  const eventDates = new Set(data.events.map(e => e.date));
+  const dayLabels = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let html = dayLabels.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+  for (let i = firstDay - 1; i >= 0; i--) html += `<div class="cal-day other-month">${prevDays - i}</div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+    const hasEv   = eventDates.has(dateStr);
+    html += `<div class="cal-day${isToday?' today':''}${hasEv?' has-event':''}" onclick="showDayEvents('${dateStr}')">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+  const monthEvents = data.events.filter(e => e.date.startsWith(`${calYear}-${String(calMonth+1).padStart(2,'0')}`));
+  document.getElementById('calEventList').innerHTML = monthEvents.length
+    ? monthEvents.map(e => `<div class="event-item"><span class="event-date-badge">${e.date.slice(8)}</span><span>${e.title}</span></div>`).join('')
+    : '<p style="font-size:0.8rem;color:var(--muted);">ไม่มีกิจกรรมในเดือนนี้</p>';
+}
+
+function showDayEvents(date) {
+  const evs = data.events.filter(e => e.date === date);
+  if (!evs.length) return;
+  alert('กิจกรรม ' + date + ':\n' + evs.map(e => '• ' + e.title + (e.desc ? ' — ' + e.desc : '')).join('\n'));
+}
+
+function renderAllEvents() {
+  const sorted = [...data.events].sort((a,b) => a.date.localeCompare(b.date));
+  document.getElementById('allEventList').innerHTML = sorted.map((e, i) => `
+    <div class="announce-item" style="padding:10px 14px;">
+      <div class="announce-dot normal"></div>
+      <div style="flex:1">
+        <div class="announce-title" style="font-size:0.85rem;">${e.title}</div>
+        <div class="announce-body" style="font-size:0.76rem;">${e.desc || ''}</div>
+        <div class="announce-meta">📅 ${e.date}
+          <span class="admin-controls" style="margin-left:8px;">
+            <button class="btn-edit" onclick="openEventModal(${i})">✏️</button>
+            <button class="btn-del"  onclick="delEvent(${i})">🗑️</button>
+          </span>
+        </div>
+      </div>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:0.85rem;">ไม่มีกิจกรรม</p>';
+}
+
+function renderDashEvents() {
+  const sorted   = [...data.events].sort((a,b) => a.date.localeCompare(b.date));
+  const upcoming = sorted.filter(e => e.date >= new Date().toISOString().slice(0,10)).slice(0,4);
+  document.getElementById('dashEvents').innerHTML = upcoming.length
+    ? upcoming.map(e => `<div class="event-item" style="margin-bottom:6px;"><span class="event-date-badge">${e.date.slice(5).replace('-','/')}</span><span style="font-size:0.8rem;">${e.title}</span></div>`).join('')
+    : '<p style="font-size:0.82rem;color:var(--muted);">ไม่มีกิจกรรมที่ใกล้มาถึง</p>';
+}
+
+function openEventModal(idx = -1) {
+  document.getElementById('ev_editIdx').value = idx;
+  if (idx >= 0) {
+    const e = data.events[idx];
+    document.getElementById('ev_title').value = e.title;
+    document.getElementById('ev_date').value  = e.date;
+    document.getElementById('ev_desc').value  = e.desc;
+    document.getElementById('eventModalTitle').textContent = 'แก้ไขกิจกรรม';
+  } else {
+    ['ev_title','ev_date','ev_desc'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eventModalTitle').textContent = 'เพิ่มกิจกรรม';
+  }
+  document.getElementById('eventModal').classList.add('open');
+}
+
+function saveEvent() {
+  const idx = parseInt(document.getElementById('ev_editIdx').value);
+  const entry = { title: document.getElementById('ev_title').value, date: document.getElementById('ev_date').value, desc: document.getElementById('ev_desc').value };
+  if (idx >= 0) data.events[idx] = entry; else data.events.push(entry);
+  saveLocal(); renderCalendar(); renderAllEvents(); renderDashEvents(); closeModal('eventModal');
+}
+
+function delEvent(idx) {
+  if (confirm('ลบกิจกรรมนี้?')) { data.events.splice(idx, 1); saveLocal(); renderCalendar(); renderAllEvents(); renderDashEvents(); }
+}
+
+// ============================================================
+//  CONTACTS
+// ============================================================
+function renderContacts() {
+  document.getElementById('contactGrid').innerHTML = data.contacts.map((c, i) => `
+    <div class="contact-card">
+      <div class="contact-avatar" style="background:${c.color}">${c.name.charAt(0)}</div>
+      <div class="contact-name">${c.name}</div>
+      <div class="contact-role">${c.role}</div>
+      <div class="contact-phone">📞 ${c.phone}</div>
+      <div class="admin-controls" style="justify-content:center;margin-top:10px;">
+        <button class="btn-edit" onclick="openContactModal(${i})">✏️</button>
+        <button class="btn-del"  onclick="delContact(${i})">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function openContactModal(idx = -1) {
+  document.getElementById('ct_editIdx').value = idx;
+  if (idx >= 0) {
+    const c = data.contacts[idx];
+    document.getElementById('ct_name').value  = c.name;
+    document.getElementById('ct_role').value  = c.role;
+    document.getElementById('ct_phone').value = c.phone;
+    document.getElementById('ct_color').value = c.color;
+    document.getElementById('contactModalTitle').textContent = 'แก้ไขรายชื่อ';
+  } else {
+    ['ct_name','ct_role','ct_phone'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('contactModalTitle').textContent = 'เพิ่มรายชื่อ';
+  }
+  document.getElementById('contactModal').classList.add('open');
+}
+
+function saveContact() {
+  const idx = parseInt(document.getElementById('ct_editIdx').value);
+  const entry = { name: document.getElementById('ct_name').value, role: document.getElementById('ct_role').value, phone: document.getElementById('ct_phone').value, color: document.getElementById('ct_color').value };
+  if (idx >= 0) data.contacts[idx] = entry; else data.contacts.push(entry);
+  saveLocal(); renderContacts(); closeModal('contactModal');
+}
+
+function delContact(idx) {
+  if (confirm('ลบรายชื่อนี้?')) { data.contacts.splice(idx, 1); saveLocal(); renderContacts(); }
+}
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
